@@ -6,13 +6,10 @@ import os
 from src.exoplanet_analysis import data_loader, processing, analysis, plotting
 
 def run_target_pipeline(target_id, sector=None):
-    """
-    Executa a pipeline completa para um unico alvo.
-    """
     print(f"\n --- Iniciando Análise para {target_id} --- ")
     
     # O Lightkurve vai procurar os dados, se for um arquivo local 
-    # voce tambem pode usar data_loader.load_tpf_from_disk(target_id)
+    #  tambem pode usar data_loader.load_tpf_from_disk(target_id)
     tpf = data_loader.download_tess_tpf(target_id, sector=sector)
     
     if isinstance(tpf, list) or type(tpf).__name__ == 'TargetPixelFileCollection':
@@ -24,7 +21,7 @@ def run_target_pipeline(target_id, sector=None):
     
     print("Calculando Periodograma BLS...")
     best_period, t0, periodogram = analysis.calculate_bls(flat_lc)
-    print(f"Período detectado: {best_period:.4f} dias.")
+    print(f"Período detectado: {best_period:.5f} dias.")
     
     folded_lc = flat_lc.fold(period=best_period, epoch_time=t0)
     

@@ -1,9 +1,10 @@
 import numpy as np
 from scipy.signal import savgol_filter
+from lightkurve.correctors import PLDCorrector
 
-def extract_lightcurve(tpf, mask_type='pipeline', threshold=3):
+def extract_lightcurve(tpf, mask_type='threshold', threshold=3, use_pld=True):
     """
-    Extrai a curva de luz de um Target Pixel File (TPF) do TESS ou Kepler
+    Extrai a curva de luz de um Target Pixel File com opcao de Correcao de Nivel de Pixel (PLD)
     
     Parametros:
     tpf : lightkurve.TessTargetPixelFile
@@ -13,12 +14,15 @@ def extract_lightcurve(tpf, mask_type='pipeline', threshold=3):
         Opções: 'pipeline' (padrao da missão), 'threshold' (acima do ruido de fundo) ou 'all'
     threshold : int
         O valor limite em sigmas usado se mask_type='threshold'
-        
+    use_pld : bool
+        Se True, utiliza a correcao de nivel de pixel (PLD)
+
     Retorno:
     --------
     lc : lightkurve.LightCurve
         Curva de luz bruta extraida
     """
+
     if mask_type == 'pipeline':
         aperture_mask = tpf.pipeline_mask
     elif mask_type == 'threshold':
@@ -28,7 +32,16 @@ def extract_lightcurve(tpf, mask_type='pipeline', threshold=3):
     else:
         raise ValueError("mask_type deve ser 'pipeline', 'threshold' ou 'all'.")
     
-    lc = tpf.to_lightcurve(aperture_mask=aperture_mask)
+
+    if use_pld:
+        try:
+            pld = PLDCorrector(tpf, aperture_mask=aperture_mask)
+            lc = pld.correct()
+        except Exception as e:
+            print(f"Aviso: Falha ao aplicar PLDCorrector: {e}. Extraindo curva bruta padrão.")
+            lc = tpf.to_lightcurve(aperture_mask=aperture_mask)
+    else:
+        lc = tpf.to_lightcurve(aperture_mask=aperture_mask)
   
     lc = lc.remove_nans()
     
